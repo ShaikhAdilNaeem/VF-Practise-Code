@@ -1,0 +1,72 @@
+//Create a Email Using Vf Page To on Opportunity:-
+vf :-
+<apex:page controller="sendEmail">
+<apex:form >
+	<apex:pageBlock >
+    	<apex:pageBlockSection title="Send Email" collapsible="true">
+                <apex:inputText label="To" value="{!toAddress}" required="true"/>
+                <apex:inputText label="CC" value="{!ccAddress}"/>
+                <apex:inputText label="Subject" value="{!subject}" required="true"/>
+                <apex:inputTextarea label="Plain Text Body" value="{!plainTextBody}" required="true"/>
+                <apex:inputTextarea label="HTML Body" value="{!htmlBody}"/>
+            </apex:pageBlockSection>
+            <apex:pageBlockButtons>
+                <apex:commandButton value="Send Email" action="{!sendEmail}" />
+            </apex:pageBlockButtons>
+    </apex:pageBlock>    
+</apex:form>
+</apex:page>
+
+Apex Code :-
+public class sendEmail 
+{
+    public String toAddress { get; set; }
+    public String ccAddress { get; set; }
+    public String subject { get; set; }
+    public String plainTextBody { get; set; }
+    public String htmlBody { get; set; }
+    public string ids{get;set;}
+    public string oppId{get;set;}
+    public string caseId{get;set;}
+    
+    public sendEmail()
+    {
+       
+        toAddress = '';
+        ccAddress = '';
+        subject = '';
+        plainTextBody = '';
+        htmlBody = '';
+    }
+    
+    public PageReference MyEmail()
+    {
+      
+        Opportunity opp = [SELECT Id, Name, Contact__r.Email FROM Opportunity where Id=:oppId];
+        Case caseRecord = [SELECT Id FROM Case Where Id=:caseId];
+        
+
+        Messaging.SingleEmailMessage mail = new Messaging.SingleEmailMessage();
+        
+
+        String[] toAddresses = new String[] {'user@acme.com'};
+        String[] ccAddresses = new String[] {'smith@gmail.com'}; 
+        
+        mail.setToAddresses(toAddresses); 
+        mail.setCcAddresses(ccAddresses); 
+        
+    
+        mail.setReplyTo('support@acme.com');
+        mail.setSenderDisplayName('Salesforce Support');
+        
+      
+        mail.setSubject('New Case Created: ' + caseRecord.Id);
+        mail.setPlainTextBody('Your Case: ' + caseRecord.Id + ' has been created. Opportunity: ' + opp.Name);
+        mail.setHtmlBody('Your case:<b> ' + caseRecord.Id + ' </b>has been created.<p>Opportunity: ' + opp.Name + '<br>To view your case <a href="https://MyDomainName.my.salesforce.com/' + caseRecord.Id + '">click here</a>.</p>');
+        
+
+        Messaging.sendEmail(new Messaging.SingleEmailMessage[] { mail });
+        
+        return null;
+    }
+}
