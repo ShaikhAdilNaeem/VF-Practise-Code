@@ -1,0 +1,397 @@
+Project Code For Creating Invoice and Inventory Process
+VF Code :-
+<apex:page controller="CreateInvoiceAndLineItem" tabstyle="Sales_Order__c" sidebar="false" >
+<apex:form >
+    <apex:pageMessages id="msgId"/>
+    <apex:pageblock title="New Invoice">
+        <apex:pageBlockButtons >
+            <apex:commandButton value="Save" action="{!onSave}" rerender="msgId"/>
+            </apex:pageBlockButtons>
+            <apex:pageblockSection title="Create Invoice" >
+                <apex:outputField value="{!inc.Account__c}"/>
+                <apex:outputField value="{!inc.Sales_Order__c}"/>
+                <apex:outputField value="{!inc.Contact__c}"/>
+                <apex:outputField value="{!inc.Opportunity__c }"/>
+                <apex:inputField value="{!inc.Ware_House__c}"/>
+            </apex:pageblockSection>
+            
+            <apex:pageblockSection title="Create Invoice line item"></apex:pageblockSection>
+            
+            <apex:pageBlockTable title="Invoice Line items" value="{!incLine}" var="incv">
+                <apex:column headerValue="SalesOrder">
+                    <apex:Outputfield value="{!incv.Sales_Order__c}"/>
+                </apex:column>
+                <apex:column headerValue="Product">
+                    <apex:Outputfield value="{!incv.Product__c}"/>
+                </apex:column>
+               <apex:column headerValue="Balanced Quantity">
+                  <apex:inputfield value="{!incv.Quantity__c}"/>
+                </apex:column>
+            </apex:pageBlockTable>
+        </apex:pageblock>
+    </apex:form>
+</apex:page>
+
+
+Apex Code :-
+public class CreateInvoiceAndLineItem {
+
+        public Id ids {get;set;}
+        
+        public Sales_Order__c salesOrd {get; set;}
+        public Invoice__c inc {get;set;}
+        
+        public List<Salesorder_Line_Product__c> soLine{get;set;}
+        public List<Invoice_Line_Product__c> incLine{get;set;}
+          
+        public List<Inventory__c> invList {get;set;}
+        public List<Inventory_History_Reduced_Inventory__c> inHisList {get;set;}    
+        public Set<id> productIds {get; set;}
+        public CreateInvoiceAndLineItem(){
+    
+    //SO Id
+        ids = ApexPages.currentPage().getParameters().get('id'); 
+        System.debug('Ids :-'+ids);
+        //Salesorder data
+        salesOrd = new Sales_Order__c();
+        salesOrd = [Select id, Account__c,Contact__c ,Opportunity_Management__c,Total_Amount__c , Valid_Till__c,Payment_terms__c
+                        from Sales_Order__c Where id =:ids ];
+        //create new invoice data      
+        inc = new Invoice__c();
+    
+            inc.Account__c = salesOrd.Account__c;
+            inc.Sales_Order__c = salesOrd.id;
+            inc.Contact__c  = salesOrd.Contact__c;
+            inc.Opportunity_Management__c= salesOrd.Opportunity_Management__c;
+        
+        //invoice Line Item from Soline item
+        soLine = [Select id, Product__c, Account__c, Balanced_Quantity__c,Invoiced_Quantity__c, Quantity__c
+                     from Salesorder_Line_Product__c
+                     where Sales_Order__c=:salesOrd.id AND Balanced_Quantity__c!=0];
+        
+        incLine = new List<Invoice_Line_Product__c> ();
+        
+        //productIds from invoice line item
+        productIds  = new Set<id>();
+        //update invline item data with soli
+        for(Salesorder_Line_Product__c s: soLine){
+            Invoice_Line_Product__c inLi = new Invoice_Line_Product__c();
+                   inLi.Quantity__c = s.Balanced_Quantity__c;
+                    inLi.Product__c= s.Product__c;  
+                    inLi.Salesorder_Line_Product__c = s.Id;
+             incLine.add(inLi);
+        }
+            
+        //Inventory and Inventory History 
+         
+    
+       }
+        
+    
+     public pageReference onSave(){
+         
+     Insert inc;  //insert invoice
+    
+         for(Salesorder_Line_Product__c sll: soLine){     //5
+            for(Invoice_Line_Product__c inLine: incLine ){
+                if(inLine.Quantity__c > sll.Balanced_Quantity__c){
+                   inLine.Quantity__c.addError('Error');    //VF page error message need to try add.Errormessage
+                    return new Pagereference('/' + ids);
+                }else
+                   //update invoice line item data
+                    inLine.Invoice__c = inc.id;
+                     productIds.add(inLine.Product__c);     //productIds from invoice line item          
+                    inLine.Account__c=  inc.Account__c;
+                        inLine.Salesorder__c = inc.Salesorder__c;  
+                    }
+                }
+              //insert line item
+              insert incLine;
+            
+            //update salesorder invoice quantity
+          for(Salesorder_Line_Product__c sl: soLine){
+            for(Invoice_Line_Product__c inLine: incLine ){
+                if(inLine.Salesorder_Line_Product__c == sl.id && sl.Quantity__c != null){
+                sl.Quantity__c += inLine.Quantity__c;        
+            }
+                }
+                }
+            //update salesorder line item
+            update soLine;
+         
+                 System.debug('productIds -->'+ productIds); //Check all product id from invoice line items are here
+    
+              invList= [Select id, Ware_House__c,Total_Invoiced_Quantity__c,Total_available_stock__c ,Product__c,Opening_Stock__c
+                from Inventory__c
+                where Ware_House__c=:inc.Warehousec AND Product__c IN :productIds];
+         
+                Map<id, id> inventryProduct = new  Map<id, id>(); //Map to store Product id and inventory Id
+    
+                for (Inventory__c inven : invList) {
+                    inventryProduct.put(inven.Product__c,inven.Id);   //Map to store Product id and inventory Id
+                    System.debug('Map--> ' +  inventryProduct); //check id of product and inventory id
+                }
+    
+                inHisList = new List<Inventory_History__c> ();
+             for(Invoice_Line_Product__c inLineP : incLine){  //2
+                    Inventory_History_Reduced_Inventory__c iH = new Inventory_History_Reduced_Inventory__c();//2
+                    iH.Quantity__c = inLineP.Quantity__c;  
+                     //  Mapping of fields
+               System.debug('inventryProduct.get(inLineP.Product__c)' + inventryProduct.get(inLineP.Product__c)); //Check empty toh nahi hai
+                    //main mapping of inventory for inventoryHistory
+                     iH.Inventory__c = inventryProduct.get(inLineP.Product__c); //put map me se inventory id jiska product id same ho as Invoice line item
+                     iH.Product__c = inLineP.Product__c; 
+                     iH.Invoice_Line_Product__c = inLineP.id;
+                     inHisList.add(iH); // add inv history
+                     System.debug('Invoice history list : ' + inHisList );    
+                     System.debug('Invoice line item: ' + incLine);
+                }
+                if(!inHisList.isEmpty()){        
+                    insert inHisList;     
+                 }
+                          return new Pagereference('/' + ids);
+        
+                 }
+    
+     }
+
+public class CreateInvoiceAndLineItem {
+
+        public Id ids {get;set;}
+        
+        public Sales_Order__c salesOrd {get; set;}
+        public Invoice__c inc {get;set;}
+        
+        public List<Salesorder_Line_Product__c> soLine{get;set;}
+        public List<Invoice_Line_Product__c> incLine{get;set;}
+          
+        public List<Inventory__c> invList {get;set;}
+        public List<Inventory_History_Reduced_Inventory__c> inHisList {get;set;}    
+        public Set<id> productIds {get; set;}
+        public CreateInvoiceAndLineItem(){
+    
+    //SO Id
+        ids = ApexPages.currentPage().getParameters().get('id'); 
+        System.debug('Ids :-'+ids);
+        //Salesorder data
+        salesOrd = new Sales_Order__c();
+        salesOrd = [Select id, Account__c,Contact__c ,Opportunity_Management__c,Total_Amount__c , Valid_Till__c,Payment_terms__c
+                        from Sales_Order__c Where id =:ids ];
+        //create new invoice data      
+        inc = new Invoice__c();
+    
+            inc.Account__c = salesOrd.Account__c;
+            inc.Sales_Order__c = salesOrd.id;
+            inc.Contact__c  = salesOrd.Contact__c;
+            inc.Opportunity__c = salesOrd.Opportunity_Management__c;
+        
+        //invoice Line Item from Soline item
+        soLine = [Select id, Product__c, Account_Name__c , Balanced_Quantity__c ,Invoiced_Quantity__c, Quantity__c
+                     from Salesorder_Line_Product__c
+                     where Salesorder_Name__c =:salesOrd.id AND Balanced_Quantity__c!=0];
+        
+        incLine = new List<Invoice_Line_Product__c> ();
+        
+        //productIds from invoice line item
+        productIds  = new Set<id>();
+        //update invline item data with soli
+        for(Salesorder_Line_Product__c s: soLine){
+            Invoice_Line_Product__c inLi = new Invoice_Line_Product__c();
+                   inLi.Quantity__c = s.Balanced_Quantity__c;
+                    inLi.Product__c= s.Product__c;  
+                    inLi.Sales_orderline_item__c = s.Id;
+             incLine.add(inLi);
+        }
+            
+        //Inventory and Inventory History 
+         
+    
+       }
+        
+    
+     public pageReference onSave(){
+         
+     Insert inc;  //insert invoice
+    
+         for(Salesorder_Line_Product__c sll: soLine){     //5
+            for(Invoice_Line_Product__c inLine: incLine ){
+                if(inLine.Quantity__c > sll.Balanced_Quantity__c){
+                   inLine.Quantity__c.addError('Error');    //VF page error message need to try add.Errormessage
+                    return new Pagereference('/' + ids);
+                }else
+                   //update invoice line item data
+                    inLine.Invoice__c = inc.id;
+                     productIds.add(inLine.Product__c);     //productIds from invoice line item          
+                    inLine.Account_Name__c =  inc.Account__c;
+                        inLine.Sales_order_Name__c = inc.Sales_Order__c ;  
+                    }
+                }
+              //insert line item
+              insert incLine;
+            
+            //update salesorder invoice quantity
+          for(Salesorder_Line_Product__c sl: soLine){
+            for(Invoice_Line_Product__c inLine: incLine ){
+                if(inLine.Sales_orderline_item__c == sl.id && sl.Quantity__c != null){
+                sl.Quantity__c += inLine.Quantity__c;        
+            }
+                }
+                }
+            //update salesorder line item
+            update soLine;
+         
+                 System.debug('productIds -->'+ productIds); //Check all product id from invoice line items are here
+    
+              invList= [Select id, Ware_House__c,Total_Invoiced_Quantity__c,Total_available_stock__c ,Product__c,Opening_Stock__c
+                from Inventory__c
+                where Ware_House__c=:inc.Ware_House__c AND Product__c IN :productIds];
+         
+                Map<id, id> inventryProduct = new  Map<id, id>(); //Map to store Product id and inventory Id
+    
+                for (Inventory__c inven : invList) {
+                    inventryProduct.put(inven.Product__c,inven.Id);   //Map to store Product id and inventory Id
+                    System.debug('Map--> ' +  inventryProduct); //check id of product and inventory id
+                }
+    
+                inHisList = new List<Inventory_History_Reduced_Inventory__c> ();
+             for(Invoice_Line_Product__c inLineP : incLine){  //2
+                    Inventory_History_Reduced_Inventory__c iH = new Inventory_History_Reduced_Inventory__c();//2
+                    iH.Invoiced_line_item_Quantity__c = inLineP.Quantity__c;  
+                     //  Mapping of fields
+                   System.debug('inventryProduct.get(inLineP.Product__c)' + inventryProduct.get(inLineP.Product__c)); //Check empty toh nahi hai
+                    //main mapping of inventory for inventoryHistory
+                     iH.Inventory__c = inventryProduct.get(inLineP.Product__c); //put map me se inventory id jiska product id same ho as Invoice line item
+                     iH.Product__c = inLineP.Product__c; 
+                     iH.Invoice_Line_Item__c = inLineP.id;
+                     inHisList.add(iH); // add inv history
+                     System.debug('Invoice history list : ' + inHisList );    
+                     System.debug('Invoice line item: ' + incLine);
+                }
+                if(!inHisList.isEmpty()){        
+                    insert inHisList;     
+                 }
+                          return new Pagereference('/' + ids);
+        
+                 }
+    
+     }
+public class CreateInvoiceAndLineItem {
+
+        public Id ids {get;set;}
+        
+        public Sales_Order__c salesOrd {get; set;}
+        public Invoice__c inc {get;set;}
+        
+        public List<Salesorder_Line_Product__c> soLine{get;set;}
+        public List<Invoice_Line_Product__c> incLine{get;set;}
+          
+        public List<Inventory__c> invList {get;set;}
+        public List<Inventory_History_Reduced_Inventory__c> inHisList {get;set;}    
+        public Set<id> productIds {get; set;}
+        public CreateInvoiceAndLineItem(){
+    
+    //SO Id
+        ids = ApexPages.currentPage().getParameters().get('id'); 
+        System.debug('Ids :-'+ids);
+        //Salesorder data
+        salesOrd = new Sales_Order__c();
+        salesOrd = [Select id, Account__c,Contact__c ,Opportunity_Management__c,Total_Amount__c , Valid_Till__c,Payment_terms__c
+                        from Sales_Order__c Where id =:ids ];
+        //create new invoice data      
+        inc = new Invoice__c();
+    
+            inc.Account__c = salesOrd.Account__c;
+            inc.Sales_Order__c = salesOrd.id;
+            inc.Contact__c  = salesOrd.Contact__c;
+            inc.Opportunity__c = salesOrd.Opportunity_Management__c;
+        
+        //invoice Line Item from Soline item
+        soLine = [Select id, Product__c, Account_Name__c , Balanced_Quantity__c ,Invoiced_Quantity__c, Quantity__c
+                     from Salesorder_Line_Product__c
+                     where Salesorder_Name__c =:salesOrd.id AND Balanced_Quantity__c!=0];
+        
+        incLine = new List<Invoice_Line_Product__c> ();
+        
+        //productIds from invoice line item
+        productIds  = new Set<id>();
+        //update invline item data with soli
+        for(Salesorder_Line_Product__c s: soLine){
+            Invoice_Line_Product__c inLi = new Invoice_Line_Product__c();
+                   inLi.Quantity__c = s.Balanced_Quantity__c;
+                    inLi.Product__c= s.Product__c;  
+                    inLi.Sales_orderline_item__c = s.Id;
+             incLine.add(inLi);
+        }
+            
+        //Inventory and Inventory History 
+         
+    
+       }
+        
+    
+     public pageReference onSave(){
+         
+     Insert inc;  //insert invoice
+    
+         for(Salesorder_Line_Product__c sll: soLine){     //5
+            for(Invoice_Line_Product__c inLine: incLine ){
+                if(inLine.Quantity__c > sll.Balanced_Quantity__c){
+                   inLine.Quantity__c.addError('Error');    //VF page error message need to try add.Errormessage
+                    return new Pagereference('/' + ids);
+                }else
+                   //update invoice line item data
+                    inLine.Invoice__c = inc.id;
+                     productIds.add(inLine.Product__c);     //productIds from invoice line item          
+                    inLine.Account_Name__c =  inc.Account__c;
+                        inLine.Sales_order_Name__c = inc.Sales_Order__c ;  
+                    }
+                }
+              //insert line item
+              insert incLine;
+            
+            //update salesorder invoice quantity
+          for(Salesorder_Line_Product__c sl: soLine){
+            for(Invoice_Line_Product__c inLine: incLine ){
+                if(inLine.Sales_orderline_item__c == sl.id && sl.Quantity__c != null){
+                sl.Quantity__c += inLine.Quantity__c;        
+            }
+                }
+                }
+            //update salesorder line item
+            update soLine;
+         
+                 System.debug('productIds -->'+ productIds); //Check all product id from invoice line items are here
+    
+              invList= [Select id, Ware_House__c,Total_Invoiced_Quantity__c,Total_available_stock__c ,Product__c,Opening_Stock__c
+                from Inventory__c
+                where Ware_House__c=:inc.Ware_House__c AND Product__c IN :productIds];
+         
+                Map<id, id> inventryProduct = new  Map<id, id>(); //Map to store Product id and inventory Id
+    
+                for (Inventory__c inven : invList) {
+                    inventryProduct.put(inven.Product__c,inven.Id);   //Map to store Product id and inventory Id
+                    System.debug('Map--> ' +  inventryProduct); //check id of product and inventory id
+                }
+    
+                inHisList = new List<Inventory_History_Reduced_Inventory__c> ();
+             for(Invoice_Line_Product__c inLineP : incLine){  //2
+                    Inventory_History_Reduced_Inventory__c iH = new Inventory_History_Reduced_Inventory__c();//2
+                    iH.Invoiced_line_item_Quantity__c = inLineP.Quantity__c;  
+                     //  Mapping of fields
+                   System.debug('inventryProduct.get(inLineP.Product__c)' + inventryProduct.get(inLineP.Product__c)); //Check empty toh nahi hai
+                    //main mapping of inventory for inventoryHistory
+                     iH.Inventory__c = inventryProduct.get(inLineP.Product__c); //put map me se inventory id jiska product id same ho as Invoice line item
+                     iH.Product__c = inLineP.Product__c; 
+                     iH.Invoice_Line_Item__c = inLineP.id;
+                     inHisList.add(iH); // add inv history
+                     System.debug('Invoice history list : ' + inHisList );    
+                     System.debug('Invoice line item: ' + incLine);
+                }
+                if(!inHisList.isEmpty()){        
+                    insert inHisList;     
+                 }
+                          return new Pagereference('/' + ids);
+        
+                 }
+    
+     }
