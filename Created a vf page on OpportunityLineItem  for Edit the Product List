@@ -1,0 +1,53 @@
+//Created a vf page on OpportunityLineItem  for Edit the Product List
+Visual Force Code :-
+<apex:page controller="productList">
+<apex:form >
+        <apex:pageBlock title="Opportunity Products">
+            <apex:pageBlockButtons >
+                <apex:commandButton action="{!save}" value="Update"/>
+                <apex:commandButton action="{!deleteProduct}" value="Delete" />
+            </apex:pageBlockButtons>
+            <apex:pageBlockTable value="{!oppList}" var="opp">
+                <apex:column headerValue="Name">
+                    <apex:outputText value="{!opp.Name}" />
+                </apex:column>
+                <apex:column headerValue="Product Code">
+                    <apex:outputText value="{!opp.ProductCode}" />
+                </apex:column>
+                <apex:column headerValue="Quantity">
+                    <apex:inputField value="{!opp.Quantity}" />
+                </apex:column>
+                <apex:column headerValue="Unit Price">
+                    <apex:inputField value="{!opp.UnitPrice}" />
+                </apex:column>
+                <apex:column headerValue="Remove BT">
+                    <apex:outputText value="{!opp.Id}" />
+                </apex:column>
+            </apex:pageBlockTable>
+        </apex:pageBlock>
+</apex:form>
+</apex:page>
+
+Apex Code :-
+public class productList 
+{
+    public List<OpportunityLineItem> oppList{get;set;}
+    
+    public productList()
+    {
+        oppList=new List<OpportunityLineItem>(); 
+        oppList=[Select Id,Name,ProductCode,Quantity,UnitPrice from OpportunityLineItem];
+  
+    }
+    public PageReference save()
+    {
+       update oppList;
+        
+        return null;
+    }
+    public void deleteProduct()
+    {
+          
+    }
+}
+
