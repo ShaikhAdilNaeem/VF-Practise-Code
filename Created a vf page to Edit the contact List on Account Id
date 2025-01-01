@@ -1,0 +1,69 @@
+//Created a vf page to Edit the contact List on Account Id :-
+Visual Force Code :-
+<apex:page controller="conEdits">
+<apex:form >
+    <apex:pageBlock >
+            <apex:variable value="{!0}" var="rownumber"/>
+            <apex:pageBlockButtons >
+                <apex:commandButton value="Update" action="{!MyupdateMethod}"/>
+                <apex:commandButton value="Cancel" action="{!MyCancelMethod}"/>
+            </apex:pageBlockButtons>
+            <apex:pageBlockTable value="{!conList}" var="con" id="tb">
+                <apex:column HeaderValue="Last Name" >
+                    <apex:outputField value="{!con.Id}"/>
+                </apex:column>
+                <apex:column HeaderValue="Last Name" >
+                    <apex:inputField value="{!con.lastname}"/>
+                </apex:column>
+                  <apex:column HeaderValue="Phone" >
+                    <apex:inputField value="{!con.phone}"/>
+                </apex:column>
+                <apex:column HeaderValue="Email" >
+                    <apex:inputField value="{!con.email}"/>
+                </apex:column>
+                  <apex:column HeaderValue="Remove Button" >
+                    {!rownumber}
+                    <apex:commandButton value="Delete" reRender="td" immediate="true">
+                         <apex:param value="{!rownumber}" assignTo="{!numtoRemove}"/>
+                    </apex:commandButton>
+                    <apex:variable value="{!rownumber+1}" var="rownumber"/>
+                </apex:column>
+        </apex:pageBlockTable>
+    </apex:pageBlock>
+</apex:form>
+</apex:page>
+
+Apex Code :-
+public class conEdits 
+{
+    public List<contact> conList{get;set;}
+    public string ids{get;set;}
+    public integer numtoRemove{get;set;}
+    public string rownumber{get;set;}
+    public conEdits()
+    {
+        ids=ApexPages.currentPage().getParameters().get('id');
+        conList=New List<contact>();
+        conList=[Select id,lastname,phone,email,accountId from contact where accountid=:'001dM00000F6t7d'];
+    }
+      public PageReference MyupdateMethod()
+    {
+        update conList;
+        
+        PageReference pf = New PageReference('/apex/conEdit?id'+ids);
+        return pf;
+    }
+    public PageReference MyCancelMethod()
+    {
+        return null;
+    }
+     public PageReference MyRemoveMethod()
+    {
+        delete conList[numtoRemove];
+        
+        PageReference pf = New PageReference('/apex/conEdit?id'+ids);
+        pf.setRedirect(true);
+        return pf;
+    }
+}
+
