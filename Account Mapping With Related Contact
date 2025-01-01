@@ -54,3 +54,37 @@ Vf Code :-
     </apex:pageBlock>   
 </apex:form> 
 </apex:page>
+
+Apex Code :-
+public class accConOpp 
+{
+    public Account acc{get;set;}
+    public Contact con{get;set;}
+    public Opportunity_Management__c opp{get;set;}
+
+    
+    public AccConOpp()
+    {
+        acc=new Account();
+        con=new Contact();
+        opp=New Opportunity_Management__c();
+
+    }
+    
+    public PageReference save()
+    {
+        insert acc;
+        con.accountid=acc.id;
+        insert con;
+        opp.Account_Name__c=acc.id;
+        insert opp;
+
+        
+        PageReference pf = New PageReference('/'+acc.id);
+        return pf;
+    }
+    public PageReference cancel()
+    {
+        return null;
+    }
+}
