@@ -1,0 +1,70 @@
+//Edit all on opportunity Line Item :-
+VF Code :-
+<apex:page controller="mydetailcsop">
+  <apex:form >
+     <apex:pageblock title="Edit Opportunity Line Items">
+     <apex:variable value="{!0}" var="rownumber"/>
+         <apex:pageBlockTable value="{!lineItems}" var="Item">
+             <apex:column headerValue="Product Code">
+             <apex:outputField value="{!Item.Product_code__c}"/>
+             </apex:column>
+             <apex:column headerValue="Product Name">
+             <apex:inputField value="{!Item.Name}"/>
+             </apex:column>
+             <apex:column headerValue="Quantity">
+             <apex:inputField value="{!Item.Quantity__c}"/>
+             </apex:column>
+             <apex:column headerValue="Unit Price">
+             <apex:inputField value="{!Item.Unit_price__c}"/>
+             </apex:column>
+             <apex:column headerValue="Total Price">
+             <apex:inputField value="{!Item.Total_price__c}"/>
+             </apex:column>
+             <apex:column headerValue="Description">
+             <apex:inputField value="{!Item.Description__c}"/>
+             </apex:column>
+             <apex:column >
+             <apex:commandButton value="Delete" action="{removeButton}" reRender="tb" immediate="True">
+             <apex:param name="p1" value="{!rowNumber}" assignTo="{!numToRemove}"/>
+             </apex:commandButton>
+                 <apex:variable value="{!rowNumber + 1}" var="rowNumber"/>
+             </apex:column>     
+      	</apex:pageBlockTable>
+         <apex:pageBlockButtons >
+             <apex:commandButton value="Update" action="{!save}"/>
+             <apex:commandButton value="Cancel" action="{!cancel}"/>
+         </apex:pageBlockButtons>
+     </apex:pageblock> 
+  </apex:form>
+</apex:page>
+
+Apex code :-
+public class mydetailcsop {
+ public List<Items__c> lineItems { get; set; }
+    public Id oppId { get; set; }
+    public String rowNumber{get;set;}
+    public Integer numToRemove{get;set;}
+
+    public mydetailcsop() {
+        oppId = ApexPages.currentPage().getParameters().get('Id'); 
+        lineItems = [SELECT Id,oppname_c,Product_codec,Name ,Quantityc,Unit_pricec, Total_pricec,Descriptionc FROM Itemsc WHERE oppname_c = :oppId];
+    }
+
+    public PageReference save() {
+            update lineItems;
+            PageReference pf = new PageReference('/' + oppId);
+            return pf;
+    }
+
+    public PageReference cancel() {
+        PageReference pf = new PageReference('/' + oppId);
+        return pf;
+    }
+    
+    public pageReference removeButton(){
+    delete lineItems[numToRemove];
+    PageReference pf = new PageReference('/apex/mydetailcsop?id=' + oppId);
+    pf.setRedirect(true);
+    return pf;
+}
+}
