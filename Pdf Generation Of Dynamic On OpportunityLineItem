@@ -1,0 +1,93 @@
+//Pdf Generation Of Dynamic On OpportunityLineItem
+Visual Force Code :-
+<apex:page standardController="Opportunity"  renderAs="Pdf">
+<table width="100%">
+    <td><h1>{!Opportunity.Company_Name__c}</h1></td>
+    <td><h1 style="text-align:right;">Invoice</h1></td>
+</table>
+<table width="100%">
+     <td style="text-align:left;">
+                    <strong>{!Opportunity.Account.Name}</strong><br/>
+                    <strong>{!Opportunity.Account.BillingCity},{!Opportunity.Account.BillingPostalCode}</strong><br/>
+                    <strong>{!Opportunity.Account.Phone}</strong><br/>
+                    <strong>{!Opportunity.Account.Fax}</strong>
+                </td>
+    <td style="text-align:right;">
+                    <strong>Date:{!Opportunity.Account.Date__c}</strong><br/>
+                    <strong>Invoice #:45478542</strong><br/>
+                    <strong>Customer Id :{!Opportunity.AccountId}</strong><br/>
+                    <strong>Due Date:{!Opportunity.CloseDate}</strong>
+    </td>
+</table>
+<table width="100%" bgcolor="#E0A79B">
+    <td><h3>Bill To</h3></td>
+    <td><h3 style="text-align:right;">Ship To</h3></td>
+</table>
+<table width="100%">
+    <apex:repeat value="{!opportunity}" var="opp">
+    <td style="text-align:left;">
+                    <strong>{!opp.Account.Name}</strong><br/>
+                    <strong>{!opp.Account.BillingStreet}</strong><br/>
+                    <strong>{!opp.Account.BillingCity}</strong><br/>
+                    <strong>{!opp.Account.BillingPostalCode}</strong><br/>
+                    <strong>{!opp.Account.BillingState}</strong><br/>
+                    <strong>{!opp.Account.BillingCountry}</strong>
+                    <strong>{!opp.Account.Phone}</strong>
+    </td>
+    <td style="text-align:right;">
+                    <strong>{!opp.Account.Name}</strong><br/>
+                    <strong>{!opp.Account.ShippingStreet}</strong><br/>
+                    <strong>{!opp.Account.ShippingCity}</strong><br/>
+                    <strong>{!opp.Account.ShippingPostalCode}</strong><br/>
+                    <strong>{!opp.Account.ShippingState}</strong><br/>
+                    <strong>{!opp.Account.ShippingCountry}</strong>
+                    <strong>{!opp.Account.Phone}</strong>
+    </td>
+    </apex:repeat>
+</table>
+
+<table border="1" width="100%">
+     <tr>
+        <th bgcolor="#E0A79B">Product Name</th>
+        <th bgcolor="#E0A79B">Quantity</th>
+        <th bgcolor="#E0A79B">Sale Price</th>
+        <th bgcolor="#E0A79B">Sub Total</th>
+        <th bgcolor="#E0A79B">Total</th>
+      </tr>
+    <apex:repeat value="{!Opportunity.OpportunityLineItems}" var="oppLineItem">
+    <tr>
+        <td bgcolor="#D6EEEE">{!oppLineItem.Product2Id}</td>
+        <td bgcolor="#D6EEEE">{!oppLineItem.Quantity}</td>
+        <td bgcolor="#D6EEEE">{!oppLineItem.UnitPrice}</td>
+        <td bgcolor="#D6EEEE">{!oppLineItem.Subtotal}</td>
+        <td bgcolor="#D6EEEE">{!oppLineItem.TotalPrice}</td>
+    </tr>
+    </apex:repeat>
+</table>
+<table width="100%">      
+      <tr><td style="text-align:right;">Sale Price :</td></tr>
+      <tr><td style="text-align:right;">Quantity :</td></tr>
+      <tr><td style="text-align:right;"><strong>Total :</strong></td></tr>
+      <p style="text-align:right">Make all checks payable to <br/>{!Opportunity.Company_Name__c}</p>
+</table>
+<table border="1">
+    <thead>
+       <tr>
+         <th text-align="left" font-size="14px" bgcolor="#E0A79B">OTHER COMMENTS</th>
+       </tr>
+     </thead>
+     <tbody>
+       <tr>
+          <td padding="10px" font-size="12px">
+            1. Total payment due in 30 days<br/>
+            2. Please include the invoice number on your check
+          </td>
+       </tr>
+     </tbody>
+</table>
+<table width="100%">
+   <p style="text-align:center;">If you have any questions about this invoice, please contact<br/>
+      [{!Opportunity.Name},{!Opportunity.Account.Phone},{!Opportunity.Email__c}]<br/>
+     <strong>Thank You For Your Business!</strong></p>
+</table>
+</apex:page>
