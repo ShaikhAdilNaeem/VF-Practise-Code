@@ -1,0 +1,56 @@
+//Account Mapping With Related Contact :-
+
+Vf Code :-
+<apex:page controller="accConOpp">
+<apex:form >
+    <apex:pageBlock >
+          <apex:pageBlockButtons >
+            <apex:commandButton value="Save" action="{!save}"/>
+            <apex:commandButton value="Cancel" action="{!cancel}"/>
+          </apex:pageBlockButtons>
+         <apex:pageBlockSection title="Account Details" collapsible="true">
+             <apex:inputField value="{!acc.Name}"/>
+             <apex:inputField value="{!acc.Phone}"/>
+             <apex:inputField value="{!acc.Website}"/>
+             <apex:inputField value="{!acc.Industry}"/>
+             <apex:inputField value="{!acc.AnnualRevenue}"/>
+             <apex:inputField value="{!acc.Employee__c}"/>
+             <apex:inputField value="{!acc.BillingStreet}"/>
+             <apex:inputField value="{!acc.ShippingStreet}"/> 
+             <apex:inputField value="{!acc.BillingCity}"/>
+             <apex:inputField value="{!acc.ShippingCity}"/>
+             <apex:inputField value="{!acc.BillingPostalCode}"/>
+             <apex:inputField value="{!acc.ShippingPostalCode}"/> 
+             <apex:inputField value="{!acc.BillingState}"/>
+             <apex:inputField value="{!acc.ShippingState}"/>
+             <apex:inputField value="{!acc.BillingCountry}"/>
+             <apex:inputField value="{!acc.ShippingCountry}"/>   
+             <apex:inputTextarea value="{!acc.Description}"/>         
+         </apex:pageBlockSection>
+         <apex:pageBlockSection title="Contact Details" collapsible="true">
+             <apex:inputField value="{!con.Salutation}"/>
+             <apex:inputField value="{!con.AccountId}"/>
+             <apex:inputField value="{!con.FirstName}"/>
+             <apex:inputField value="{!con.LastName}"/>
+             <apex:inputField value="{!con.Title}"/>
+             <apex:inputField value="{!con.Phone}"/>
+             <apex:inputField value="{!con.MobilePhone}"/>
+             <apex:inputField value="{!con.Email}"/>       
+         </apex:pageBlockSection> 
+         <apex:pageBlockSection title="Opportunity Details" collapsible="True">
+             <apex:inputField value="{!opp.Account_Name__c}"/>
+             <apex:inputField value="{!opp.Contact_Name__c}"/>
+             <apex:inputField value="{!opp.Email__c}"/>
+             <apex:inputField value="{!opp.Stage__c}"/>
+             <apex:inputField value="{!opp.Close_Date__c}"/>
+             <apex:inputField value="{!opp.Out_Of_Sate__c}"/>
+             <apex:inputField value="{!opp.Lead_Source__c}"/>
+             <apex:inputField value="{!opp.Other_Lead_Source__c}"/>
+             <apex:inputField value="{!opp.Reason_For_Lost__c}"/>
+             <apex:inputField value="{!opp.Other_Reason_For_Lost__c}"/>  
+             <apex:inputField value="{!opp.Total__c}"/> 
+             <apex:inputField value="{!opp.Remarks__c}"/>                
+         </apex:pageBlockSection>
+    </apex:pageBlock>   
+</apex:form> 
+</apex:page>
