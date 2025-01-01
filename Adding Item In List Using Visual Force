@@ -1,0 +1,50 @@
+Visual Force Code 
+<apex:page controller="addItems">
+<apex:form >
+    <apex:pageBlock >
+        <apex:pageBlockButtons location="top">
+           <apex:inputText value="{!value}"/>
+           <apex:commandButton value="Add" action="{!Add}" reRender="additem"/>
+           <apex:commandButton value="Remove" action="{!Remove}" reRender="additem" />
+        </apex:pageBlockButtons>
+       <apex:outputPanel id="additem">
+            <apex:repeat value="{!lst}" var="lt">
+                <apex:outputText value="{!lt}" /><br/>
+            </apex:repeat>
+        </apex:outputPanel>
+    </apex:pageBlock>
+</apex:form>
+</apex:page>
+
+
+Apex Class :-
+public class addItems 
+{
+    public List<String> lst{get;set;}
+    public string value{get;set;}
+    
+    public addItems()
+    {
+        lst=new List<String>();
+        value='';
+        
+    }
+    
+    public void Add()
+    {
+        if(value !=null)
+        {
+                lst.add(value);
+                value='';
+           
+        }
+		System.debug('Values'+lst);
+    }
+    public void Remove()
+    {
+      
+        lst.remove(lst.size()-1);
+        
+    }
+    
+}
