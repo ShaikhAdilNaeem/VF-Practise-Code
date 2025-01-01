@@ -1,0 +1,64 @@
+//Create a vf page for OpportunityLineItem Edit
+Visual Force Code :-
+<apex:page controller="productList">
+<apex:form >
+        <apex:pageBlock title="Opportunity Products">
+            <apex:variable value="{!0}" var="rownumber"/>
+            <apex:pageBlockButtons >
+                <apex:commandButton action="{!save}" value="Update"/>
+            </apex:pageBlockButtons>
+            <apex:pageBlockTable value="{!oppList}" var="opp" id="tb">
+                <apex:column headerValue="Name">
+                    <apex:outputText value="{!opp.Name}" />
+                </apex:column>
+                <apex:column headerValue="Product Code">
+                    <apex:outputText value="{!opp.ProductCode}" />
+                </apex:column>
+                <apex:column headerValue="Quantity">
+                    <apex:inputField value="{!opp.Quantity}" />
+                </apex:column>
+                <apex:column headerValue="Unit Price">
+                    <apex:inputField value="{!opp.UnitPrice}" />
+                </apex:column>
+                <apex:column headerValue="Remove BT">
+                   {!rownumber}
+                   <apex:commandButton value="Delete" action="{!deleteProduct}" reRender="td" immediate="true">
+                       <apex:param value="{!rownumber}" assignTo="{!numToRemove}"/>
+                   </apex:commandButton>
+                   <apex:variable value="{!rownumber+1}" var="rownumber"/>
+                </apex:column>
+            </apex:pageBlockTable>
+        </apex:pageBlock>
+</apex:form>
+</apex:page>
+
+Apex Code:-
+public class productList 
+{
+    public List<OpportunityLineItem> oppList{get;set;}
+    public string ids{get;set;}
+    public string rownumber{get;set;}
+    public integer numToRemove{get;set;}
+    
+    public productList()
+    {
+        ids=ApexPages.CurrentPage().getParameters().get('id');
+        oppList=new List<OpportunityLineItem>(); 
+        oppList=[Select Id,Name,ProductCode,Quantity,UnitPrice from OpportunityLineItem where id=:ids];
+  
+    }
+    public PageReference save()
+    {
+       update oppList;
+       
+        PageReference pf=New PageReference('/apex//apex/productList?id='+ids);
+        return pf;
+    }
+    public PageReference deleteProduct()
+    {
+          delete oppList[numToRemove];
+          PageReference pg= New PageReference('/apex/productList?id='+ids);
+          pg.setRedirect(true);
+          return pg;
+    }
+}
